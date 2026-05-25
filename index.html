@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoMind - Location-Based Smart Reminders</title>
+    <!-- FontAwesome Icons for Premium Iconography -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Leaflet Map CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <!-- Leaflet Map JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Main Style Sheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Header Section -->
+        <header>
+            <div class="brand-section">
+                <div class="logo-icon"><i class="fa-solid fa-map-location-dot"></i></div>
+                <div class="logo-glow">GeoMind <span style="font-weight: 300; font-size: 1.1rem; margin-left: 5px; color: var(--text-secondary);">Reminders</span></div>
+            </div>
+            
+            <div class="status-badge" id="gps-status">
+                <div class="status-dot" id="status-dot"></div>
+                <span id="status-text">Proximity Radar Off</span>
+            </div>
+        </header>
+
+        <!-- Main Layout Split Grid -->
+        <main class="main-grid">
+            
+            <!-- Left Side: Interactive Map & Simulator Controls -->
+            <div class="map-panel">
+                <div class="map-card">
+                    <div class="map-header">
+                        <div class="panel-title">
+                            <i class="fa-solid fa-earth-americas"></i>
+                            <h3>Interactive Navigation Canvas</h3>
+                        </div>
+                        <div class="status-badge" style="background: rgba(0, 240, 255, 0.05); border-color: rgba(0, 240, 255, 0.15);">
+                            <span style="font-size: 0.75rem; color: var(--accent-cyan); font-weight: 600;"><i class="fa-solid fa-hand-pointer"></i> Double-Click map to place reminder</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Leaflet Canvas -->
+                    <div id="map"></div>
+                </div>
+
+                <!-- Simulation & Avatar Controls -->
+                <div class="controls-card">
+                    <div class="panel-title" style="margin-bottom: 12px; font-size: 0.95rem;">
+                        <i class="fa-solid fa-person-running" style="color: var(--accent-cyan);"></i>
+                        <h4>GPS Proximity Simulator</h4>
+                    </div>
+                    <div class="controls-grid">
+                        <button class="control-btn" id="btn-live-gps" title="Track your actual real-world live GPS location">
+                            <i class="fa-solid fa-satellite-dish"></i> Use Live GPS
+                        </button>
+                        <button class="control-btn" id="btn-simulate-current" title="Center map on your current avatar location">
+                            <i class="fa-solid fa-crosshairs"></i> Center Avatar
+                        </button>
+                        <button class="control-btn" id="btn-mode-drag" title="Drag the teal marker on the map to change GPS location">
+                            <i class="fa-solid fa-arrows-up-down-left-right"></i> Manual Drag
+                        </button>
+                        <button class="control-btn" id="btn-preset-office" title="Teleport simulated GPS to Office center">
+                            <i class="fa-solid fa-building"></i> Go to Office
+                        </button>
+                        <button class="control-btn" id="btn-preset-market" title="Teleport simulated GPS to Hardware Market center">
+                            <i class="fa-solid fa-cart-shopping"></i> Go to Market
+                        </button>
+                        <button class="control-btn" id="btn-preset-park" title="Teleport simulated GPS to Central Park center">
+                            <i class="fa-solid fa-tree"></i> Go to Park
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Metrics Dashboard & Task List -->
+            <div class="side-panel">
+                
+                <!-- Metrics Grid -->
+                <div class="metrics-row">
+                    <div class="metric-card">
+                        <div class="metric-icon blue">
+                            <i class="fa-solid fa-list-check"></i>
+                        </div>
+                        <div class="metric-data">
+                            <span class="metric-val" id="metric-total">0</span>
+                            <span class="metric-lbl">Total Tasks</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-icon emerald">
+                            <i class="fa-solid fa-bell"></i>
+                        </div>
+                        <div class="metric-data">
+                            <span class="metric-val" id="metric-triggered">0</span>
+                            <span class="metric-lbl">Triggered</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-icon purple">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                        <div class="metric-data">
+                            <span class="metric-val" id="metric-high">0</span>
+                            <span class="metric-lbl">High Priority</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scrollable Dashboard Task List Container -->
+                <div class="content-card">
+                    <!-- Tabs -->
+                    <div class="tab-nav">
+                        <button class="tab-btn active" id="tab-all" data-filter="all">All Reminders</button>
+                        <button class="tab-btn" id="tab-pending" data-filter="pending">Pending</button>
+                        <button class="tab-btn" id="tab-triggered" data-filter="triggered">Triggered</button>
+                    </div>
+
+                    <!-- Search and Filters -->
+                    <div class="filter-search-container">
+                        <div class="search-wrapper">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" class="search-input" id="search-bar" placeholder="Search tasks or locations...">
+                        </div>
+                        <select class="priority-select-filter" id="filter-priority">
+                            <option value="all">All Priorities</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
+
+                    <!-- Tasks Scrollable area -->
+                    <div class="tasks-list" id="tasks-list-container">
+                        <!-- Dynamic content injected here by JavaScript -->
+                        <div class="empty-state">
+                            <i class="fa-solid fa-signs-post"></i>
+                            <p>No reminders saved yet.<br>Double-click anywhere on the map or click the button below to add your first smart location task!</p>
+                        </div>
+                    </div>
+
+                    <!-- Add Reminder Button -->
+                    <div class="footer-actions">
+                        <button class="btn-primary" id="btn-add-reminder">
+                            <i class="fa-solid fa-circle-plus"></i> Create Location Reminder
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Form (Hidden by default) -->
+    <div class="modal-overlay" id="modal-reminder">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modal-title-text"><i class="fa-solid fa-location-dot" style="color: var(--accent-cyan); margin-right: 8px;"></i>Create Smart Reminder</h3>
+                <button class="modal-close" id="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <form id="form-reminder">
+                <!-- Title input -->
+                <div class="form-group">
+                    <label class="form-label" for="task-title">Reminder Title</label>
+                    <input type="text" class="form-input" id="task-title" placeholder="e.g. Buy bolts & insulation tape" required>
+                </div>
+
+                <!-- Description -->
+                <div class="form-group">
+                    <label class="form-label" for="task-desc">Task Description</label>
+                    <input type="text" class="form-input" id="task-desc" placeholder="e.g. Stop by the local store on Main St.">
+                </div>
+
+                <!-- Coordinates Row -->
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label class="form-label" for="task-lat">Latitude</label>
+                        <input type="number" step="any" class="form-input" id="task-lat" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="task-lng">Longitude</label>
+                        <input type="number" step="any" class="form-input" id="task-lng" required>
+                    </div>
+                </div>
+
+                <!-- Radius and Priority Row -->
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label class="form-label" for="task-radius">Geofence Radius (meters)</label>
+                        <input type="number" class="form-input" id="task-radius" min="10" max="5000" value="200" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="task-priority">Priority Level</label>
+                        <select class="form-input" id="task-priority">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Deadline and voice row -->
+                <div class="form-group">
+                    <label class="form-label" for="task-deadline">Deadline (Optional)</label>
+                    <input type="datetime-local" class="form-input" id="task-deadline">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-checkbox-group" for="task-voice">
+                        <input type="checkbox" id="task-voice" checked style="accent-color: var(--accent-purple); width: 16px; height: 16px; cursor: pointer;">
+                        <span class="form-checkbox-label">Enable Voice Alert (Text-To-Speech announcement)</span>
+                    </label>
+                </div>
+
+                <div class="form-footer">
+                    <button type="button" class="btn-secondary" id="btn-cancel-form">Cancel</button>
+                    <button type="submit" class="btn-submit">Save Location Reminder</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notification Toast Container -->
+    <div class="toast-container" id="toast-holder">
+        <!-- In-app toasts injected dynamically by JavaScript -->
+    </div>
+
+    <!-- Core App Logic -->
+    <script src="app.js"></script>
+</body>
+</html>
