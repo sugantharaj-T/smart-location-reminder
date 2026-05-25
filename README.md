@@ -1,4 +1,5 @@
 # Smart Location Reminder App 📍🔔
+https://smart-location-reminder.vercel.app/
 
 A smart productivity web application that combines note-taking with real-time location awareness. The app reminds users about tasks automatically when they reach or come near a saved location.
 
